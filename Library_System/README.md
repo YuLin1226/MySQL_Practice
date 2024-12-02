@@ -230,3 +230,57 @@ WHERE qr_code = 'BOOK00000001';
 
 COMMIT;
 ```
+
+## 搜尋資料庫相關內容
+
+```sql
+-- 查詢某用戶的借閱歷史
+SELECT b.title, br.borrow_date, br.due_date, br.return_date
+FROM borrow_records br
+JOIN books b ON br.book_id = b.book_id
+WHERE br.user_id = (SELECT user_id FROM users WHERE card_id = 'USER00000001');
+
+-- 查詢逾期未還的書籍
+SELECT b.title, u.name, br.due_date
+FROM borrow_records br
+JOIN books b ON br.book_id = b.book_id
+JOIN users u ON br.user_id = u.user_id
+WHERE br.return_date IS NULL 
+AND br.due_date < CURRENT_DATE;
+
+-- 查詢方法的差異
+    -- 未優化的查詢：列出所有欄位
+SELECT * FROM books WHERE status = 'available';
+    -- 優化後的查詢：只選取需要的欄位
+SELECT title, author, qr_code 
+FROM books 
+WHERE status = 'available';
+```
+
+## 建立 INDEX 與搜尋
+
+```sql
+-- books 表格
+CREATE INDEX idx_books_status ON books(status);  
+-- 因為我們常常需要查詢可借閱的書籍
+-- borrow_records 表格
+CREATE INDEX idx_borrow_dates ON borrow_records(borrow_date, due_date);
+-- 因為我們需要查詢借閱日期和到期日
+CREATE INDEX idx_book_user ON borrow_records(book_id, user_id);
+-- 因為我們常用這兩個欄位來JOIN查詢
+
+-- 使用索引的複雜查詢
+SELECT 
+    b.title,
+    u.name,
+    br.borrow_date,
+    br.due_date
+FROM borrow_records br
+FORCE INDEX (idx_book_user)  -- 強制使用特定索引
+JOIN books b ON br.book_id = b.book_id
+JOIN users u ON br.user_id = u.user_id
+WHERE br.return_date IS NULL
+AND br.due_date < CURRENT_DATE;
+```
+
+這部份有點疑慮，我把 Claude 的回答寫在這個[筆記](https://hackmd.io/@YuLin1226/S1C3pWi7yg)上。
