@@ -1,15 +1,9 @@
-## 連接到特定資料庫
-```sql
+-- Active: 1733128601746@@127.0.0.1@3306
 CREATE DATABASE My_First_DB
     DEFAULT CHARACTER SET = 'utf8mb4';
 
 USE My_First_DB;
-```
 
-
-## 建立 TABLE 的方法
-
-```sql
 CREATE TABLE books (
     book_id INT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(100) NOT NULL,
@@ -38,21 +32,7 @@ CREATE TABLE borrow_records (
     FOREIGN KEY (book_id) REFERENCES books(book_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
-```
 
-- 主鍵(Primary Key):
-  - 主鍵是用來唯一標識表中每一筆資料的欄位。
-  - 每個表只能有一個主鍵，而且主鍵的值不能重複也不能為空。
-  - 通常我們會選擇一個具有唯一性的欄位作為主鍵，例如學生ID、商品編號等。
-
-- 外鍵(Foreign Key):
-  - 外鍵是用來建立表與表之間關係的欄位。
-  - 外鍵參照其他表的主鍵，用來確保資料的一致性和完整性。
-  - 一個表可以有多個外鍵。
-
-## 選擇資料庫與查詢表格
-
-```sql
 SELECT DATABASE();
 
 SHOW TABLES;
@@ -60,53 +40,6 @@ SHOW TABLES;
 DESCRIBE books;
 DESCRIBE users;
 DESCRIBE borrow_records;
-```
-
-DELETE 和 TRUNCATE 這兩個清除資料的指令的主要差異：
-
-1. 執行方式
-   - DELETE：一筆一筆刪除資料，會在交易日誌(Transaction Log)中記錄每一筆刪除操作
-   - TRUNCATE：直接釋放資料表所占用的資料頁(Data Pages)，只記錄頁面的釋放
-
-
-2. 執行速度
-   - DELETE：較慢，因為要一條一條執行並記錄日誌
-   - TRUNCATE：較快，因為是整表刪除，不需逐筆處理
-
-
-3. WHERE 條件句
-   - DELETE：可以使用 WHERE 條件句選擇性刪除
-       ```sql
-       DELETE FROM employees WHERE department = 'IT';
-       ```
-   - TRUNCATE：不能使用 WHERE，只能刪除整張表
-       ```sql
-       TRUNCATE TABLE employees;
-       ``````
-
-4. 自動編號(Identity)處理
-   - DELETE：刪除後，自動編號接續原本的序號
-   - TRUNCATE：重置自動編號回初始值（通常是 1）
-
-
-5. 交易(Transaction)處理
-   - DELETE：可以 ROLLBACK（復原）
-   - TRUNCATE：通常不能 ROLLBACK（某些資料庫系統例外）
-
-
-6. 觸發器(Trigger)
-   - DELETE：會觸發表上的 DELETE 觸發器
-   - TRUNCATE：不會觸發任何觸發器
-
-7. 使用建議：
-   - 如果要刪除整張表的資料且不需要復原，用 TRUNCATE 較有效率
-   - 如果需要條件式刪除或要保留刪除記錄，用 DELETE 較適合
-
-
-
-## 新增資料進表格之中
-
-```sql
 
 INSERT INTO books (title, author, isbn, publication_year) VALUES
 ('哈利波特：神秘的魔法石', 'J.K. 羅琳', '9573317249', 1997),
@@ -117,19 +50,13 @@ INSERT INTO users (name, email, phone) VALUES
 ('陳小明', 'ming@example.com', '0912345678'),
 ('王小華', 'wang@example.com', '0923456789'),
 ('林小美', 'mei@example.com', '0934567890');
-```
 
-## 刪除資料
 
-```sql
 DELETE FROM borrow_records;
 DELETE FROM users;
 DELETE FROM books;
-```
 
-## 在已有資料的情況下，新增欄位的方法
-
-```sql
+-- 在已有資料的情況下，新增欄位的方法
     -- 1. 先新增 qr_code 欄位，但暫時允許 NULL
 ALTER TABLE books
 ADD COLUMN qr_code VARCHAR(50) UNIQUE AFTER book_id;
@@ -150,10 +77,7 @@ SELECT
     1949,
     CONCAT('BOOK', LPAD((SELECT COALESCE(MAX(book_id) + 1, 1) FROM books b), 8, '0'))
 ;
-```
 
-操作同上
-```sql
 ALTER Table users
 ADD COLUMN card_id VARCHAR(50) UNIQUE AFTER user_id;
 
@@ -161,11 +85,9 @@ UPDATE users SET card_id = CONCAT('USER', LPAD(user_id, 8, '0'));
 
 ALTER TABLE users
 MODIFY COLUMN card_id VARCHAR(50) UNIQUE NOT NULL;
-```
 
-## 一次新增多筆資料
 
-```sql
+-- 一次新增多筆資料
 INSERT INTO books (title, author, isbn, publication_year, qr_code) 
 SELECT 
     '一九八四',
@@ -181,11 +103,6 @@ SELECT
     1932,
     CONCAT('BOOK', LPAD((SELECT COALESCE(MAX(book_id) + 2, 2) FROM books b), 8, '0'))
 ;
-```
-
-## 借還書方法（但我覺得這應該做在其他程式語言）
-
-```sql
 
 -- 關聯書籍與使用者資料，來新增借閱資料的範例：
 -- 借出前要把book的狀態修改，然後再新增借閱資料。
@@ -229,4 +146,3 @@ SET status = 'available'
 WHERE qr_code = 'BOOK00000001';
 
 COMMIT;
-```
