@@ -351,3 +351,72 @@ LIMIT 1;
 
     `ASC`：升序排列（從小到大，舊到新）
 - `LIMIT 1` 取第一筆資料。
+
+## Trigger 用法
+
+```sql
+CREATE TRIGGER after_return_update_stock
+AFTER UPDATE ON borrow_records
+FOR EACH ROW
+BEGIN
+    -- 變數宣告必須在最開始
+    DECLARE v_reservation_id INT;
+    DECLARE v_user_id INT;
+END //
+```
+
+基本上長這樣。
+然後裡面比較特別的地方是和一般的語言一樣，變數要作用域的一開始就定義，不然在 IF ELSE 裡面才宣告的話，可能會有`NEAR v_reservation_id INT` 這種錯誤。特別記一下，因為 Claude 一開始給我的範本就犯了這個錯誤。
+
+另外，`NEW` 和 `OLD` 代表的是：
+- `NEW`: 資料變更後的狀態。
+- `OLD`: 資料變更前的狀態。
+
+假設我們有這樣一筆借閱記錄：
+```sql
+-- 原始資料（還沒還書時）
+record_id | book_id | user_id | borrow_date | due_date    | return_date
+1         | 101     | 201     | 2024-02-01  | 2024-02-15  | NULL
+```
+
+當使用者還書時，我們執行：
+```sql
+UPDATE borrow_records
+SET return_date = '2024-02-10'
+WHERE record_id = 1;
+```
+
+在觸發器中：
+- `OLD` 代表更新前的資料行：
+```sql
+OLD.record_id = 1
+OLD.book_id = 101
+OLD.user_id = 201
+OLD.borrow_date = '2024-02-01'
+OLD.due_date = '2024-02-15'
+OLD.return_date = NULL  -- 更新前是 NULL
+```
+
+- `NEW` 代表更新後的資料行：
+```sql
+NEW.record_id = 1
+NEW.book_id = 101
+NEW.user_id = 201
+NEW.borrow_date = '2024-02-01'
+NEW.due_date = '2024-02-15'
+NEW.return_date = '2024-02-10'  -- 更新後有了日期
+```
+
+所以在觸發器中的這行判斷：
+```sql
+IF NEW.return_date IS NOT NULL AND OLD.return_date IS NULL THEN
+```
+就是在檢查：
+1. 更新前 return_date 是 NULL（OLD.return_date IS NULL）
+2. 更新後 return_date 有值（NEW.return_date IS NOT NULL）
+3. 這兩個條件同時成立，就代表這是一個還書的動作
+
+不同的觸發時機可以使用的變數：
+1. INSERT 觸發器：只能使用 NEW（因為是新增資料）
+2. DELETE 觸發器：只能使用 OLD（因為是刪除資料）
+3. UPDATE 觸發器：可以同時使用 NEW 和 OLD（因為是修改資料）
