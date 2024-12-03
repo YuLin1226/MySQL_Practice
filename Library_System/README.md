@@ -329,3 +329,25 @@ END
 - 利用 `COUNT` 來慢慢數一個 `USER` 來借了幾本書，內容涉及搜尋`borrow_records` 的操作。
 - 直接在 `USER` 結構裡面新增一個 `Number of borrowed books`，然後每次借閱、還書的時候，都會涵蓋修改該資料的操作。
  
+
+## 還書程序講解
+
+基本上與借書差不多，所以雷同語法跳過。
+比較不一樣的用法在於
+
+```sql
+-- 檢查是否有未完成的借閱記錄
+SELECT record_id 
+INTO v_borrow_record_id
+FROM borrow_records
+WHERE book_id = v_book_id 
+AND return_date IS NULL
+ORDER BY borrow_date DESC
+LIMIT 1;
+```
+
+這邊的 `ORDER ...` 與 `LIMIT 1`
+- `ORDER` 表示排序，根據 `borrow_date` 來 `DESC` 降序排列（從大到小，新到舊）。
+
+    `ASC`：升序排列（從小到大，舊到新）
+- `LIMIT 1` 取第一筆資料。
