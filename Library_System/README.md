@@ -420,3 +420,27 @@ IF NEW.return_date IS NOT NULL AND OLD.return_date IS NULL THEN
 1. INSERT 觸發器：只能使用 NEW（因為是新增資料）
 2. DELETE 觸發器：只能使用 OLD（因為是刪除資料）
 3. UPDATE 觸發器：可以同時使用 NEW 和 OLD（因為是修改資料）
+
+
+## 刪除方法
+
+目前在 VS Code 裡面操作 SQL, 但語法、UI還不是太清楚，所以有時候會出現已經創建某某東西的時候。
+因此如果想要直接刪除，然後重新創建，可以用這個語句的方法來刪除。
+
+
+```sql
+-- 一般刪除方法
+DROP DATABASE [IF EXISTS] database_name;
+DROP TABLE [IF EXISTS] table_name;
+DROP TRIGGER [IF EXISTS] trigger_name;
+DROP PROCEDURE [IF EXISTS] procedure_name;
+DROP VIEW [IF EXISTS] view_name;
+-- 刪除索引
+DROP INDEX index_name ON table_name;
+-- 刪除外鍵
+ALTER TABLE table_name
+DROP FOREIGN KEY foreign_key_name;
+
+-- 範例：刪除 Trigger
+DROP TRIGGER IF EXISTS after_return_update_stock;
+```
