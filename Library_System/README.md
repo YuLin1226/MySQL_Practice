@@ -284,3 +284,48 @@ AND br.due_date < CURRENT_DATE;
 ```
 
 這部份有點疑慮，我把 Claude 的回答寫在這個[筆記](https://hackmd.io/@YuLin1226/S1C3pWi7yg)上。
+
+
+## 借書程序講解
+
+#### [DELIMITER](https://blog.csdn.net/pan_junbiao/article/details/86291722)
+
+```sql
+DELIMITER //
+DELIMITER ;
+```
+這個用於改變 SQL 的行句結尾符，因為一般的 MySQL 是 `;` 結尾就會執行該行指令。
+而這個 `DELIMITER` 可以先暫停中間不執行，等到你把所有部份定義完再執行。
+
+#### PROCEDURE
+
+有點像是在定義函數的概念，語法是
+```sql
+CREATE PROCEDURE borrow_book(
+    IN p_card_id VARCHAR(50),    -- 使用者卡號
+    IN p_qr_code VARCHAR(50),    -- 書籍 QR 碼
+    OUT p_status VARCHAR(100)    -- 執行狀態
+)
+BEGIN
+    -- 省略中間。
+END
+```
+- `IN` 表 Input
+- `OUT` 表 Output
+- 執行該 Procedure 方式為 
+    ```sql
+    CALL borrow_book('USER00000001', 'BOOK00000001', @status);
+    SELECT @status;
+    ```
+
+內部程序的內容大概分成
+1. 參數宣告：`DECLARE`。
+2. 根據需要的邏輯去賦值參數，大概就是`SELECT, FROM, WHERE`的操作。
+3. `IF ELSE` 的寫法和 Python 挺像的。
+4. `TRANSACTION` 的[用法](https://medium.com/@martin87713/mysql-transaction-a-k-a-%E4%BA%A4%E6%98%93or%E4%BA%8B%E5%8B%99-70b19b3c9953)則是讓定義的操作變得一致，表示該內容全部執行（成功），或者全部不執行（失敗）。
+    > 我有附上相關參考連結。
+
+在這個程序的定義裡面，我認為 `COUNT` 或許可以利用修改 `USER` 的結構來避免掉這個操作，畢竟一個使用者借了幾本書應該也算是滿容易被定義在資料庫裡的。但基於我仍是一名初學者，我不確定以下兩種方法的效率何者較佳：
+- 利用 `COUNT` 來慢慢數一個 `USER` 來借了幾本書，內容涉及搜尋`borrow_records` 的操作。
+- 直接在 `USER` 結構裡面新增一個 `Number of borrowed books`，然後每次借閱、還書的時候，都會涵蓋修改該資料的操作。
+ 
