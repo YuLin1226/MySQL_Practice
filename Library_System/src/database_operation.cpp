@@ -1,10 +1,18 @@
 // database_operations.cpp
 #include "database_operation.h"
+#include <iostream>
 #include <sstream>
 
 bool DatabaseOperations::executeQuery(const std::string& query) {
     DatabaseConnection& db = DatabaseConnection::getInstance();
-    return mysql_query(db.getRawConnection(), query.c_str()) == 0;
+    MYSQL* conn = db.getRawConnection();
+    
+    if (mysql_query(conn, query.c_str()) != 0) {
+        std::cerr << "SQL Error: " << mysql_error(conn) << std::endl;
+        std::cerr << "Query was: " << query << std::endl;
+        return false;
+    }
+    return true;
 }
 
 MYSQL_RES* DatabaseOperations::executeSelectQuery(const std::string& query) {
@@ -27,12 +35,13 @@ std::string DatabaseOperations::escapeString(const std::string& str) {
 // Book Operations
 bool DatabaseOperations::createBook(const Book& book) {
     std::stringstream ss;
-    ss << "INSERT INTO books (qr_code, title, author, isbn, publication_year, status) VALUES ('"
-       << escapeString(book.qr_code) << "', '"
-       << escapeString(book.title) << "', '"
-       << escapeString(book.author) << "', '"
-       << escapeString(book.isbn) << "', "
-       << book.publication_year << ", 'available')";
+    ss << "INSERT INTO books (title, author, isbn, publication_year) "
+       << "SELECT "
+       << "'" << escapeString(book.title) << "', "
+       << "'" << escapeString(book.author) << "', "
+       << "'" << escapeString(book.isbn) << "', "
+       << book.publication_year << ", "
+       << "CONCAT('BOOK', LPAD((SELECT COALESCE(MAX(book_id) + 1, 1) FROM books b), 8, '0'))";
     
     return executeQuery(ss.str());
 }
