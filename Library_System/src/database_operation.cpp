@@ -25,11 +25,40 @@ bool DatabaseOperations::executeQuery(const std::string& query) {
 }
 
 MYSQL_RES* DatabaseOperations::executeSelectQuery(const std::string& query) {
+    
     DatabaseConnection& db = DatabaseConnection::getInstance();
-    if (mysql_query(db.getRawConnection(), query.c_str()) != 0) {
+    MYSQL* conn = db.getRawConnection();
+    
+    // 檢查連接狀態
+    if (mysql_ping(conn) != 0) {
+        std::cerr << "Connection lost. Attempting to reconnect..." << std::endl;
+        if (!db.connect()) {
+            std::cerr << "Reconnection failed: " << mysql_error(conn) << std::endl;
+            return nullptr;
+        }
+    }
+    
+    // 先清除任何之前的結果集
+    while (mysql_next_result(conn) == 0) {
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result) {
+            mysql_free_result(result);
+        }
+    }
+    
+    // 執行查詢
+    if (mysql_query(conn, query.c_str()) != 0) {
+        std::cerr << "SQL Error: " << mysql_error(conn) << std::endl;
+        std::cerr << "Query was: " << query << std::endl;
         return nullptr;
     }
-    return mysql_store_result(db.getRawConnection());
+    
+    MYSQL_RES* result = mysql_store_result(conn);
+    if (!result) {
+        std::cerr << "Failed to store result: " << mysql_error(conn) << std::endl;
+    }
+    
+    return result;
 }
 
 std::string DatabaseOperations::escapeString(const std::string& str) {
