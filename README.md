@@ -259,3 +259,90 @@ std::string goodQuery = "INSERT INTO books (title) VALUES ('" + safeInput + "')"
 - 記得為轉義字符串分配足夠的空間（原字符串長度的兩倍加1）
 - 不要對已經轉義的字符串再次進行轉義
 - 確保在建立資料庫連接後再使用 mysql_real_escape_string
+
+
+# Diff between `executeQuery` & `executeSelectQuery`
+
+讓我解釋這兩個函數的主要差異。關鍵在於它們處理的 SQL 操作類型和回傳值不同：
+
+`executeQuery` 函數：
+```cpp
+bool executeQuery(const std::string& query) {
+    DatabaseConnection& db = DatabaseConnection::getInstance();
+    return mysql_query(db.getRawConnection(), query.c_str()) == 0;
+}
+```
+- 用於執行不需要返回結果的 SQL 語句（INSERT、UPDATE、DELETE）
+- 返回 bool 值表示操作是否成功
+- 只關心執行成功與否，不需要處理結果集
+
+`executeSelectQuery` 函數：
+```cpp
+MYSQL_RES* executeSelectQuery(const std::string& query) {
+    DatabaseConnection& db = DatabaseConnection::getInstance();
+    if (mysql_query(db.getRawConnection(), query.c_str()) != 0) {
+        return nullptr;
+    }
+    return mysql_store_result(db.getRawConnection());
+}
+```
+- 專門用於執行 SELECT 查詢
+- 返回 MYSQL_RES* （結果集指針）
+- 需要額外處理返回的數據結果集
+
+使用範例：
+
+1. executeQuery 的使用（INSERT 操作）：
+```cpp
+bool createUser(const User& user) {
+    std::stringstream ss;
+    ss << "INSERT INTO users (name, email) VALUES ('"
+       << escapeString(user.name) << "', '"
+       << escapeString(user.email) << "')";
+    
+    return executeQuery(ss.str());  // 只需要知道是否成功
+}
+```
+
+2. executeSelectQuery 的使用（SELECT 操作）：
+```cpp
+std::optional<User> getUser(const std::string& id) {
+    std::string query = "SELECT * FROM users WHERE id = '" + escapeString(id) + "'";
+    
+    MYSQL_RES* result = executeSelectQuery(query);  // 需要處理返回的結果集
+    if (!result) {
+        return std::nullopt;
+    }
+    
+    MYSQL_ROW row = mysql_fetch_row(result);
+    if (!row) {
+        mysql_free_result(result);
+        return std::nullopt;
+    }
+    
+    User user;
+    user.id = std::stoi(row[0]);
+    user.name = row[1];
+    user.email = row[2];
+    
+    mysql_free_result(result);
+    return user;
+}
+```
+
+主要區別：
+1. **用途不同**：
+   - executeQuery：用於修改數據（INSERT/UPDATE/DELETE）
+   - executeSelectQuery：用於查詢數據（SELECT）
+
+2. **返回值不同**：
+   - executeQuery：返回布爾值（成功/失敗）
+   - executeSelectQuery：返回結果集指針
+
+3. **記憶體管理**：
+   - executeQuery：不需要額外的記憶體管理
+   - executeSelectQuery：需要手動釋放結果集（mysql_free_result）
+
+4. **使用場景**：
+   - executeQuery：適用於不需要回傳資料的操作
+   - executeSelectQuery：適用於需要獲取資料的查詢
