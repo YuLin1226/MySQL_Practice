@@ -2,8 +2,6 @@
 #include "database.h"
 #include "database_operation.h"
 
-// 定義測試場景
-
 #define TEST_CRUD_OPERATIONS 1
 
 void printBook(const Book& book) {
@@ -36,23 +34,23 @@ int main() {
 #if TEST_CRUD_OPERATIONS
         DatabaseOperations ops;
         
-        // 1. 新增書籍測試
-        std::cout << "\n=== 測試新增書籍 ===\n";
-        Book newBook{
-            0,              // id 會由資料庫自動分配
-            "",            // qr_code 會由資料庫生成
-            "C++ 程式設計", // 書名
-            "張三",        // 作者
-            "9789571234567", // ISBN
-            2024,           // 出版年
-            "available"     // 狀態
-        };
+        // // 1. 新增書籍測試
+        // std::cout << "\n=== 測試新增書籍 ===\n";
+        // Book newBook{
+        //     0,              // id 會由資料庫自動分配
+        //     "",            // qr_code 會由資料庫生成
+        //     "C++ 程式設計", // 書名
+        //     "張三",        // 作者
+        //     "9789571234567", // ISBN
+        //     2024,           // 出版年
+        //     "available"     // 狀態
+        // };
         
-        if (ops.createBook(newBook)) {
-            std::cout << "成功新增書籍！\n";
-        } else {
-            std::cout << "新增書籍失敗！\n";
-        }
+        // if (ops.createBook(newBook)) {
+        //     std::cout << "成功新增書籍！\n";
+        // } else {
+        //     std::cout << "新增書籍失敗！\n";
+        // }
 
         // 2. 查詢書籍測試
         std::cout << "\n=== 測試查詢書籍 ===\n";
@@ -60,24 +58,51 @@ int main() {
         auto book = ops.getBook(qr_code);
         
         if (book) {
-            std::cout << "找到書籍：\n";
-            printBook(*book);
+            // std::cout << "找到書籍：\n";
+            // printBook(*book);
+
+            // // 3. 測試更新書籍
+            // std::cout << "\n=== 測試更新書籍 ===\n";
+            // Book updateBook = *book;  // 複製找到的書籍資訊
+            // updateBook.title = "更新後的書名";
+            // updateBook.author = "新作者";
+            
+            // if (ops.updateBook(updateBook)) {
+            //     std::cout << "成功更新書籍！\n";
+            //     // 顯示更新後的資訊
+            //     auto updatedBook = ops.getBook(qr_code);
+            //     if (updatedBook) {
+            //         std::cout << "更新後的書籍資訊：\n";
+            //         printBook(*updatedBook);
+            //     }
+            // } else {
+            //     std::cout << "更新書籍失敗！\n";
+            // }
+
+            // 4. 測試刪除書籍
+            std::cout << "\n=== 測試刪除書籍 ===\n";
+            std::string delete_qr = "BOOK00000011";  // 選擇一個要刪除的書籍
+            if (ops.deleteBook(delete_qr)) {
+                std::cout << "成功刪除書籍！\n";
+            } else {
+                std::cout << "刪除書籍失敗！\n";
+            }
         } else {
             std::cout << "找不到 QR 碼為 " << qr_code << " 的書籍\n";
         }
 
-        // 3. 查詢所有書籍
-        std::cout << "\n=== 測試查詢所有書籍 ===\n";
-        auto all_books = ops.getAllBooks();
+        // // 5. 查詢所有書籍
+        // std::cout << "\n=== 測試查詢所有書籍 ===\n";
+        // auto all_books = ops.getAllBooks();
         
-        if (all_books.empty()) {
-            std::cout << "資料庫中沒有任何書籍\n";
-        } else {
-            std::cout << "資料庫中共有 " << all_books.size() << " 本書：\n";
-            for (const auto& book : all_books) {
-                printBook(book);
-            }
-        }
+        // if (all_books.empty()) {
+        //     std::cout << "資料庫中沒有任何書籍\n";
+        // } else {
+        //     std::cout << "資料庫中共有 " << all_books.size() << " 本書：\n";
+        //     for (const auto& book : all_books) {
+        //         printBook(book);
+        //     }
+        // }
 #endif
 
         // 斷開連接
