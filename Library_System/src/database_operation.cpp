@@ -7,6 +7,15 @@ bool DatabaseOperations::executeQuery(const std::string& query) {
     DatabaseConnection& db = DatabaseConnection::getInstance();
     MYSQL* conn = db.getRawConnection();
     
+    // 檢查連接狀態
+    if (mysql_ping(conn) != 0) {
+        std::cerr << "Connection lost. Attempting to reconnect..." << std::endl;
+        if (!db.connect()) {
+            std::cerr << "Reconnection failed: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+    }
+
     if (mysql_query(conn, query.c_str()) != 0) {
         std::cerr << "SQL Error: " << mysql_error(conn) << std::endl;
         std::cerr << "Query was: " << query << std::endl;
@@ -35,13 +44,13 @@ std::string DatabaseOperations::escapeString(const std::string& str) {
 // Book Operations
 bool DatabaseOperations::createBook(const Book& book) {
     std::stringstream ss;
-    ss << "INSERT INTO books (title, author, isbn, publication_year) "
+    ss << "INSERT INTO books (title, author, isbn, publication_year, qr_code) "  // 加入 qr_code 欄位
        << "SELECT "
        << "'" << escapeString(book.title) << "', "
        << "'" << escapeString(book.author) << "', "
        << "'" << escapeString(book.isbn) << "', "
-       << book.publication_year << ", "
-       << "CONCAT('BOOK', LPAD((SELECT COALESCE(MAX(book_id) + 1, 1) FROM books b), 8, '0'))";
+       << book.publication_year << ", "  // 這裡的逗號是正確的
+       << "CONCAT('BOOK', LPAD((SELECT COALESCE(MAX(book_id) + 1, 1) FROM books b), 8, '0'))";  // 最後一個值不需要逗號
     
     return executeQuery(ss.str());
 }
