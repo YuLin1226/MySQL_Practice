@@ -4,7 +4,7 @@
 int main() {
     try {
         // Initialize database connection
-        DatabaseConnection::initialize("localhost", "your_username", "your_password", "My_First_DB", 3306);
+        DatabaseConnection::initialize("localhost", "library_user", "password123", "My_First_DB", 3306);
         
         // Get database instance
         DatabaseConnection& db = DatabaseConnection::getInstance();
