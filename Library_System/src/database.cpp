@@ -69,8 +69,21 @@ bool DatabaseConnection::isConnected() const {
 }
 
 std::string DatabaseConnection::getCurrentDatabase() const {
-    const char* db = mysql_get_server_info(connection_);
-    return db ? db : "";
+    
+    if (mysql_query(connection_, "SELECT DATABASE()") != 0) {
+        return "";  // 查询失败
+    }
+    
+    MYSQL_RES* result = mysql_store_result(connection_);
+    if (!result) {
+        return "";
+    }
+    
+    MYSQL_ROW row = mysql_fetch_row(result);
+    std::string database_name = row ? (row[0] ? row[0] : "") : "";
+    
+    mysql_free_result(result);
+    return database_name;
 }
 
 std::string DatabaseConnection::getServerInfo() const {
