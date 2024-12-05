@@ -156,42 +156,29 @@ bool DatabaseOperations::deleteBook(const std::string& qr_code) {
 
 // Borrow Operations
 bool DatabaseOperations::createBorrowRecord(const std::string& book_qr, const std::string& user_card) {
-    DatabaseConnection& db = DatabaseConnection::getInstance();
-    MYSQL* conn = db.getRawConnection();
     
-    // Start transaction
-    if (mysql_query(conn, "START TRANSACTION") != 0) {
+    // 1. 先執行 procedure
+    std::stringstream ss;
+    ss << "CALL borrow_book('" 
+       << escapeString(user_card) << "', '" 
+       << escapeString(book_qr) << "', @status)";
+    
+    if (!executeQuery(ss.str())) {
         return false;
     }
-    
-    try {
-        // Update book status
-        std::string updateQuery = "UPDATE books SET status = 'borrowed' WHERE qr_code = '" + 
-                                escapeString(book_qr) + "'";
-        if (!executeQuery(updateQuery)) {
-            mysql_query(conn, "ROLLBACK");
-            return false;
-        }
-        
-        // Create borrow record
-        std::stringstream ss;
-        ss << "INSERT INTO borrow_records (book_id, user_id, borrow_date, due_date) "
-           << "SELECT b.book_id, u.user_id, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY) "
-           << "FROM books b JOIN users u "
-           << "WHERE b.qr_code = '" << escapeString(book_qr) << "' "
-           << "AND u.card_id = '" << escapeString(user_card) << "'";
-        
-        if (!executeQuery(ss.str())) {
-            mysql_query(conn, "ROLLBACK");
-            return false;
-        }
-        
-        return mysql_query(conn, "COMMIT") == 0;
-    }
-    catch (...) {
-        mysql_query(conn, "ROLLBACK");
+
+    // 2. 再查詢結果
+    MYSQL_RES* result = executeSelectQuery("SELECT @status");
+    if (!result) {
         return false;
     }
+
+    MYSQL_ROW row = mysql_fetch_row(result);
+    std::string status = row ? row[0] : "";
+    mysql_free_result(result);
+    
+    return status == "Success";
+
 }
 
 // User Operations
@@ -272,43 +259,27 @@ bool DatabaseOperations::deleteUser(const std::string& card_id) {
 }
 
 bool DatabaseOperations::returnBook(const std::string& book_qr) {
-    DatabaseConnection& db = DatabaseConnection::getInstance();
-    MYSQL* conn = db.getRawConnection();
     
-    // Start transaction
-    if (mysql_query(conn, "START TRANSACTION") != 0) {
+    // 1. 執行 return_book procedure
+    std::stringstream ss;
+    ss << "CALL return_book('" 
+       << escapeString(book_qr) << "', @status)";
+    
+    if (!executeQuery(ss.str())) {
         return false;
     }
-    
-    try {
-        // Update borrow record
-        std::string updateBorrowQuery = 
-            "UPDATE borrow_records SET return_date = CURRENT_DATE "
-            "WHERE book_id = (SELECT book_id FROM books WHERE qr_code = '" + 
-            escapeString(book_qr) + "') "
-            "AND return_date IS NULL";
-            
-        if (!executeQuery(updateBorrowQuery)) {
-            mysql_query(conn, "ROLLBACK");
-            return false;
-        }
-        
-        // Update book status
-        std::string updateBookQuery = 
-            "UPDATE books SET status = 'available' "
-            "WHERE qr_code = '" + escapeString(book_qr) + "'";
-            
-        if (!executeQuery(updateBookQuery)) {
-            mysql_query(conn, "ROLLBACK");
-            return false;
-        }
-        
-        return mysql_query(conn, "COMMIT") == 0;
-    }
-    catch (...) {
-        mysql_query(conn, "ROLLBACK");
+
+    // 2. 檢查執行結果
+    MYSQL_RES* result = executeSelectQuery("SELECT @status");
+    if (!result) {
         return false;
     }
+
+    MYSQL_ROW row = mysql_fetch_row(result);
+    std::string status = row ? row[0] : "";
+    mysql_free_result(result);
+    
+    return status == "Success";
 }
 
 std::vector<BorrowRecord> DatabaseOperations::getUserBorrowHistory(const std::string& user_card) {
