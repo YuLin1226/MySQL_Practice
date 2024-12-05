@@ -17,7 +17,8 @@ set(MySQL_LIBRARY_DIR "/usr/lib/x86_64-linux-gnu")  # 一般庫文件位置
 
 # 添加可執行文件
 add_executable(library_system
-    src/main.cpp
+    # src/main.cpp
+    src/main_user_test.cpp
     src/database.cpp
     src/database_operation.cpp
 )

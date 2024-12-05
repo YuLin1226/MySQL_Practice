@@ -197,11 +197,12 @@ bool DatabaseOperations::createBorrowRecord(const std::string& book_qr, const st
 // User Operations
 bool DatabaseOperations::createUser(const User& user) {
     std::stringstream ss;
-    ss << "INSERT INTO users (card_id, name, email, phone) VALUES ('"
-       << escapeString(user.card_id) << "', '"
-       << escapeString(user.name) << "', '"
-       << escapeString(user.email) << "', '"
-       << escapeString(user.phone) << "')";
+    ss << "INSERT INTO users (name, email, phone, card_id) "  
+       << "SELECT "
+       << "'" << escapeString(user.name) << "', "
+       << "'" << escapeString(user.email) << "', "
+       << "'" << escapeString(user.phone) << "', "
+       << "CONCAT('USER', LPAD((SELECT COALESCE(MAX(user_id) + 1, 1) FROM users u), 8, '0'))";
     
     return executeQuery(ss.str());
 }
