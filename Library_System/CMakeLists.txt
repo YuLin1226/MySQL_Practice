@@ -33,7 +33,6 @@ target_include_directories(library_system PRIVATE
 
 # 鏈接庫
 target_link_libraries(library_system PRIVATE
-    ${MYSQL_LIBRARY}
     mysqlclient
 )
 
