@@ -19,7 +19,9 @@ target_include_directories(inventory_system
     /usr/include/soci
     /usr/include/mysql
     ${MYSQL_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
 )
+
 
 # 連結庫
 target_link_libraries(inventory_system
