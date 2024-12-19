@@ -9,8 +9,8 @@ private:
 public:
     WarehouseRepository(/* args */);
     ~WarehouseRepository();
-    bool create(Warehouse w) override;
-    Warehouse findWarehouseByCode(std::string code) override;
-    bool update(Warehouse w) override;
+    bool create(const Warehouse& w) override;
+    Warehouse findWarehouseByCode(const std::string& code) override;
+    bool update(const Warehouse& w) override;
 };
 

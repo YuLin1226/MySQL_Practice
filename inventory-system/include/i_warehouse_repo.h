@@ -9,9 +9,9 @@ private:
 public:
     IWarehouseRepository(/* args */){};
     virtual ~IWarehouseRepository(){};
-    virtual bool create(Warehouse w) = 0;
-    virtual Warehouse findWarehouseByCode(std::string code) = 0;
-    virtual bool update(Warehouse w) =0;
+    virtual bool create(const Warehouse& w) = 0;
+    virtual Warehouse findWarehouseByCode(const std::string& code) = 0;
+    virtual bool update(const Warehouse& w) =0;
 
 
 };
