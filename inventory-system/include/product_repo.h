@@ -8,8 +8,8 @@ private:
 public:
     ProductRepository(/* args */);
     ~ProductRepository();
-    bool create(Product p) override;
-    Product findProductByCode(std::string code) override;
-    bool update(Product p) override;
+    bool create(const Product& p) override;
+    Product findProductByCode(const std::string& code) override;
+    bool update(const Product& p) override;
 };
 
